@@ -115,49 +115,49 @@ def SendData():
     )
 
 
-def GoForward():
+def GoForward(v):
     linear.x = 0.1 * speed_lv
     linear.y = 0
     angular.z = 0
     SendData()
 
 
-def GoBack():
+def GoBack(v):
     linear.x = -0.1 * speed_lv
     linear.y = 0
     angular.z = 0
     SendData()
 
 
-def GoLeft():
+def GoLeft(v):
     linear.x = 0
     linear.y = 0.1 * speed_lv
     angular.z = 0
     SendData()
 
 
-def GoRight():
+def GoRight(v):
     linear.x = 0
     linear.y = -0.1 * speed_lv
     angular.z = 0
     SendData()
 
 
-def TurnLeft():
+def TurnLeft(v):
     linear.x = 0
     linear.y = 0
     angular.z = 0.1 * speed_lv
     SendData()
 
 
-def TurnRight():
+def TurnRight(v):
     linear.x = 0
     linear.y = 0
     angular.z = -0.1 * speed_lv
     SendData()
 
 
-def Stop():
+def Stop(v):
     linear.x = 0
     linear.y = 0
     angular.z = 0
@@ -218,26 +218,20 @@ def joystickLoop(eventFile):
                         setGait(cyberdog_app_pb2.Pattern.GAIT_WALK)
             elif t == 3:
                 if c == 5:
-                    if v == 0:  # 前进
-                        GoForward()
-                    elif v == 255:  # 后退
-                        GoBack()
-                    elif v == 128:
-                        Stop()
+                    if v < 127:  # 前进
+                        GoForward(v)
+                    elif v > 129:  # 后退
+                        GoBack(v)
                 elif c == 2:
-                    if v == 0:
-                        TurnLeft()
-                    elif v == 255:
-                        TurnRight()
-                    elif v == 128:
-                        Stop()
+                    if v < 127:
+                        TurnLeft(v)
+                    elif v > 129:
+                        TurnRight(v)
                 elif c == 0:
-                    if v == 0:
-                        GoLeft()
-                    elif v == 255:
-                        GoRight()
-                    elif v == 128:
-                        Stop()
+                    if v < 127:
+                        GoLeft(v)
+                    elif v > 129:
+                        GoRight(v)
 
 
 def main():
