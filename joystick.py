@@ -1,8 +1,17 @@
 import struct
+import os
 from devices import detectJoystick
 import grpc
 import cyberdog_app_pb2
 import cyberdog_app_pb2_grpc
+import logging
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    filename="joystick.log",
+    filemode="a",
+    format="%(asctime)s - %(pathname)s[line:%(lineno)d] - %(levelname)s: %(message)s",
+)
 
 
 class Vector3:
@@ -234,13 +243,26 @@ def joystickLoop(eventFile):
                         GoRight(v)
 
 
+def ros2():
+    topic_name = ""
+    while topic_name.strip() == "":
+        topic_name = os.system("ros2 topic list | grep ip_notify")
+    os.system(
+        "ros2 topic pub --once "
+        + topic_name
+        + ' std_msgs/msg/String "data: 127.0.0.1:127.0.0.1"'
+    )
+    logging.debug('ros2 topic sent')
+
+
 def main():
+    ros2()
     init()
-    print('search joystick...')
+    logging.debug("search joystick...")
     joystickEvent = None
     while joystickEvent == None:
         joystickEvent = detectJoystick(["T-3"])
-    print('find joystick and start loop')
+    logging.debug("find joystick and start loop")
     joystickLoop(joystickEvent)
 
 

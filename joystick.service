@@ -1,0 +1,11 @@
+[Unit]
+Description=CyberDog Joystick
+
+[Service]
+User=mi
+WorkingDirectory=/home/mi/Desktop/cyberdog
+ExecStart=/usr/bin/env python3 joystick.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

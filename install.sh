@@ -1,9 +1,7 @@
-pip install grpcio
-pip install grpcio-tools
-
-cp joystick /etc/init.d/
-chmod +x /etc/init.d/joystick
-ln -sf /etc/init.d/joystick /usr/bin/joystick
-
-systemctl enable joystick
-systemctl start joystick
+#sudo pip install grpcio
+#sudo pip install grpcio-tools
+sudo cp joystick /etc/init.d
+sudo chmod +x /etc/init.d/joystick
+sudo ln -sf /etc/init.d/joystick /usr/bin/joystick
+sudo update-rc.d joystick defaults
+sudo /etc/init.d/joystick start
