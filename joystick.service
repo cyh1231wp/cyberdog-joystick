@@ -2,9 +2,9 @@
 Description=CyberDog Joystick
 
 [Service]
-User=mi
-WorkingDirectory=/home/mi/Desktop/cyberdog
-ExecStart=/usr/bin/env python3 joystick.py
+User=root
+WorkingDirectory=/home/mi/Desktop/cyberdog-joystick
+ExecStart=/usr/bin/python3 /home/mi/Desktop/cyberdog-joystick/joystick.py
 Restart=always
 
 [Install]

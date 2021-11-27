@@ -10,7 +10,7 @@ logging.basicConfig(
     level=logging.DEBUG,
     filename="joystick.log",
     filemode="a",
-    format="%(asctime)s - %(pathname)s[line:%(lineno)d] - %(levelname)s: %(message)s",
+    format="%(asctime)s - %(levelname)s: %(message)s",
 )
 
 
@@ -44,7 +44,7 @@ def init():
     except grpc.FutureTimeoutError:
         print("Connect error, Timeout")
     else:
-        print("grpc connected")
+        logging.debug("grpc connected")
         # Get stub from channel
         stub = cyberdog_app_pb2_grpc.CyberdogAppStub(channel)
 
