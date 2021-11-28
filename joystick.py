@@ -1,17 +1,9 @@
 import struct
-import os
+import subprocess
 from devices import detectJoystick
 import grpc
 import cyberdog_app_pb2
 import cyberdog_app_pb2_grpc
-import logging
-
-logging.basicConfig(
-    level=logging.DEBUG,
-    filename="joystick.log",
-    filemode="a",
-    format="%(asctime)s - %(levelname)s: %(message)s",
-)
 
 
 class Vector3:
@@ -44,7 +36,7 @@ def init():
     except grpc.FutureTimeoutError:
         print("Connect error, Timeout")
     else:
-        logging.debug("grpc connected")
+        print("grpc connected")
         # Get stub from channel
         stub = cyberdog_app_pb2_grpc.CyberdogAppStub(channel)
 
@@ -193,7 +185,7 @@ def joystickLoop(eventFile):
             event = infile.read(EVENT_SIZE)
             _, _, t, c, v = struct.unpack(FORMAT, event)
             # print('---event---')
-            print("t=%s,c=%s,v=%s" % (t, c, v))
+            # print("t=%s,c=%s,v=%s" % (t, c, v))
             if t == 1 and v == 1:  # 功能按键
                 if c == 315:  # 站立
                     setMode(cyberdog_app_pb2.CheckoutMode_request.MANUAL)
@@ -244,25 +236,29 @@ def joystickLoop(eventFile):
 
 
 def ros2():
+    print(subprocess.getoutput("whoami"))
     topic_name = ""
-    while topic_name.strip() == "":
-        topic_name = os.system("ros2 topic list | grep ip_notify")
-    os.system(
+    while topic_name.find("ip_notify") == -1:
+        topic_name = subprocess.getoutput("ros2 topic list | grep ip_notify")
+        print(topic_name)
+    ret = subprocess.getoutput(
         "ros2 topic pub --once "
         + topic_name
         + ' std_msgs/msg/String "data: 127.0.0.1:127.0.0.1"'
     )
-    logging.debug('ros2 topic sent')
+    print(ret)
+    print("ros2 topic sent")
 
 
 def main():
+    print("main")
     ros2()
     init()
-    logging.debug("search joystick...")
+    print("search joystick...")
     joystickEvent = None
     while joystickEvent == None:
         joystickEvent = detectJoystick(["T-3"])
-    logging.debug("find joystick and start loop")
+    print("find joystick and start loop")
     joystickLoop(joystickEvent)
 
 
