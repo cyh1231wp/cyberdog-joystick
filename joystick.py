@@ -1,9 +1,17 @@
 import struct
-import subprocess
+import os,subprocess
 from devices import detectJoystick
 import grpc
 import cyberdog_app_pb2
 import cyberdog_app_pb2_grpc
+import logging
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    filename="joystick.log",
+    filemode="a",
+    format="%(asctime)s - %(levelname)s: %(message)s",
+)
 
 
 class Vector3:
@@ -36,7 +44,7 @@ def init():
     except grpc.FutureTimeoutError:
         print("Connect error, Timeout")
     else:
-        print("grpc connected")
+        logging.debug("grpc connected")
         # Get stub from channel
         stub = cyberdog_app_pb2_grpc.CyberdogAppStub(channel)
 
@@ -180,6 +188,7 @@ def SpeedDown():
 def joystickLoop(eventFile):
     FORMAT = "llHHI"
     EVENT_SIZE = struct.calcsize(FORMAT)
+    subprocess.getoutput('chmod 664 '+ eventFile)
     with open(eventFile, "rb") as infile:
         while True:
             event = infile.read(EVENT_SIZE)
@@ -236,9 +245,9 @@ def joystickLoop(eventFile):
 
 
 def ros2():
-    print(subprocess.getoutput("whoami"))
+    print(subprocess.getoutput('whoami'))
     topic_name = ""
-    while topic_name.find("ip_notify") == -1:
+    while topic_name.find('ip_notify') == -1:
         topic_name = subprocess.getoutput("ros2 topic list | grep ip_notify")
         print(topic_name)
     ret = subprocess.getoutput(
@@ -247,18 +256,18 @@ def ros2():
         + ' std_msgs/msg/String "data: 127.0.0.1:127.0.0.1"'
     )
     print(ret)
-    print("ros2 topic sent")
+    logging.debug("ros2 topic sent")
 
 
 def main():
-    print("main")
+    logging.debug("main")
     ros2()
     init()
-    print("search joystick...")
+    logging.debug("search joystick...")
     joystickEvent = None
     while joystickEvent == None:
         joystickEvent = detectJoystick(["T-3"])
-    print("find joystick and start loop")
+    logging.debug("find joystick and start loop")
     joystickLoop(joystickEvent)
 
 

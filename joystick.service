@@ -5,9 +5,21 @@ Description=CyberDog Joystick
 User=mi
 Group=mi
 WorkingDirectory=/home/mi/Desktop/cyberdog-joystick
+Environment="ROS_DOMAIN_ID=42"
+Environment="ROS_VERSION=2"
+Environment="ROS_PYTHON_VERSION=3"
+Environment="ROS_DISTRO=foxy"
+Environment="LD_LIBRARY_PATH=/opt/ros2/foxy/lib:/opt/ros2/cyberdog/lib:/usr/local/lib:$LD_LIBRARY_PATH"
+Environment="PYTHONPATH=/opt/ros2/foxy/lib/python3.6/site-packages:/opt/ros2/cyberdog/lib/python3.6/site-packages"
+Environment="AMENT_PREFIX_PATH=/opt/ros2/foxy:/opt/ros2/cyberdog"
+Environment="DISPLAY=:0"
+Environment="RMW_IMPLEMENTATION=rmw_cyclonedds_cpp"
+Environment="ROS_LOCALHOST_ONLY=1"
+Environment="CYCLONEDDS_URI=file:///etc/systemd/system/cyclonedds.xml"
+Environment="PATH=/opt/ros2/cyberdog/bin:/opt/ros2/foxy/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"
+
 ExecStart=/usr/bin/python3 /home/mi/Desktop/cyberdog-joystick/joystick.py
-Restart=always
-RestartSec=10
+Restart=on-failure
 
 [Install]
 WantedBy=multi-user.target
