@@ -1,10 +1,10 @@
 # Cyberdog-Joystick
 本项目可以实现铁蛋开机后自动搜索蓝牙手柄，并通过蓝牙手柄控制铁蛋的运动方向以及几个常用动作。
 
-####蓝牙配对
+##蓝牙配对
 通过nomachine或者hdmi线进入铁蛋的桌面后，打开蓝牙界面（Devices），选择自己的蓝牙手柄信号（我的为T-3）进行pair，并trust。至此，蓝牙手柄在下次开机时就可以自动连接铁蛋。
 
-####安装脚本
+##安装脚本
 ```
 cd /home/mi/Desktop
 git clone https://github.com/cyh1231wp/cyberdog-joystick.git
