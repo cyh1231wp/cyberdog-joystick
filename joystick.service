@@ -19,7 +19,6 @@ Environment="CYCLONEDDS_URI=file:///etc/systemd/system/cyclonedds.xml"
 Environment="PATH=/opt/ros2/cyberdog/bin:/opt/ros2/foxy/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"
 
 ExecStart=/usr/bin/python3 /home/mi/Desktop/cyberdog-joystick/joystick.py
-Restart=always
 Restart=on-failure
 
 [Install]

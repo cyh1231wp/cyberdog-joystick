@@ -1,5 +1,5 @@
 import struct
-import os,subprocess
+import os, subprocess
 from devices import detectJoystick
 import grpc
 import cyberdog_app_pb2
@@ -7,6 +7,7 @@ import cyberdog_app_pb2_grpc
 import threading
 import time
 import logging
+
 
 class Vector3:
     x: float = 0
@@ -24,9 +25,10 @@ MAX_SPEED = 16
 
 stub = None
 cyberdog_ip = "127.0.0.1"
-speed_lv = 1
+speed_lv = 0
 linear = Vector3(0, 0, 0)
 angular = Vector3(0, 0, 0)
+attitude = 0
 
 
 def init():
@@ -107,68 +109,74 @@ def setGait(gait_id=8):
 
 
 def SendData():
-    global stub
-    stub.sendAppDecision(
-        cyberdog_app_pb2.Decissage(
-            twist=cyberdog_app_pb2.Twist(
-                linear=cyberdog_app_pb2.Vector3(x=linear.x, y=linear.y, z=linear.z),
-                angular=cyberdog_app_pb2.Vector3(x=angular.x, y=angular.y, z=angular.z),
-            )
-        )
-    )
+    global stub, linear, angular
+    print("start send thread")
+    while True:
+        if linear.x != 0 or linear.y != 0 or angular.z != 0:
+            try:
+                stub.sendAppDecision(
+                    cyberdog_app_pb2.Decissage(
+                        twist=cyberdog_app_pb2.Twist(
+                            linear=cyberdog_app_pb2.Vector3(
+                                x=linear.x, y=linear.y, z=linear.z
+                            ),
+                            angular=cyberdog_app_pb2.Vector3(
+                                x=angular.x, y=angular.y, z=angular.z
+                            ),
+                        )
+                    )
+                )
+            except:
+                print('err')
+        time.sleep(0.5)
 
 
-def GoForward(v):
+def GoForward():
     linear.x = 0.1 * speed_lv
     linear.y = 0
     angular.z = 0
-    SendData()
 
 
-def GoBack(v):
+def GoBack():
     linear.x = -0.1 * speed_lv
     linear.y = 0
     angular.z = 0
-    SendData()
 
 
-def GoLeft(v):
+def GoLeft():
     linear.x = 0
     linear.y = 0.1 * speed_lv
     angular.z = 0
-    SendData()
 
 
-def GoRight(v):
+def GoRight():
     linear.x = 0
     linear.y = -0.1 * speed_lv
     angular.z = 0
-    SendData()
 
 
-def TurnLeft(v):
+def TurnLeft():
     linear.x = 0
     linear.y = 0
     angular.z = 0.1 * speed_lv
-    SendData()
 
 
-def TurnRight(v):
+def TurnRight():
     linear.x = 0
     linear.y = 0
     angular.z = -0.1 * speed_lv
-    SendData()
 
 
-def Stop(v):
+def Stop():
     linear.x = 0
     linear.y = 0
     angular.z = 0
-    SendData()
 
 
 def SpeedUp():
     global speed_lv
+    if speed_lv == 0:
+        setGait()
     speed_lv += 1
     speed_lv = min(speed_lv, MAX_SPEED)
 
@@ -179,10 +187,20 @@ def SpeedDown():
     speed_lv = max(speed_lv, 1)
 
 
+def changeAttitude():
+    global attitude
+    if attitude == 0:
+        setMode(cyberdog_app_pb2.CheckoutMode_request.MANUAL)
+        attitude = 1
+    elif attitude == 1:
+        setMode(cyberdog_app_pb2.CheckoutMode_request.DEFAULT)
+        attitude = 0
+
+
 def joystickLoop(eventFile):
     FORMAT = "llHHI"
     EVENT_SIZE = struct.calcsize(FORMAT)
-    subprocess.getoutput('chmod 664 '+ eventFile)
+    subprocess.getoutput("chmod 664 " + eventFile)
     with open(eventFile, "rb") as infile:
         while True:
             event = infile.read(EVENT_SIZE)
@@ -190,58 +208,40 @@ def joystickLoop(eventFile):
             # print('---event---')
             # print("t=%s,c=%s,v=%s" % (t, c, v))
             if t == 1 and v == 1:  # 功能按键
-                if c == 315:  # 站立
-                    setMode(cyberdog_app_pb2.CheckoutMode_request.MANUAL)
-                elif c == 314:  # 趴下
-                    setMode(cyberdog_app_pb2.CheckoutMode_request.DEFAULT)
-                elif c == 308:  # Y：握手
+                if c == 305:  # A: 站立 趴下 自切换
+                    changeAttitude()
+                elif c == 307:  # B：握手
                     setOrder(cyberdog_app_pb2.MonOrder.MONO_ORDER_HI_FIVE)
-                elif c == 307:  # X：跳舞
+                elif c == 304:  # C：跳舞
                     setOrder(cyberdog_app_pb2.MonOrder.MONO_ORDER_DANCE)
-                elif c == 304:  # A：作揖
-                    setOrder(cyberdog_app_pb2.MonOrder.MONO_ORDER_BOW)
-                elif c == 305:  # B：坐下
+                # elif c == 304:  # A：作揖
+                #     setOrder(cyberdog_app_pb2.MonOrder.MONO_ORDER_BOW)
+                elif c == 308:  # D：坐下
                     setOrder(cyberdog_app_pb2.MonOrder.MONO_ORDER_SIT)
-                elif c == 312:  # 速度+1
+                elif c == 311:  # 速度+1
                     SpeedUp()
-                elif c == 313:  # 速度-1
+                elif c == 310:  # 速度-1
                     SpeedDown()
-                elif c == 310:
-                    setGait()
-                elif c == 311:
-                    Stop()
-                elif c == 17:
-                    if v == 1:  # 下
-                        setGait(cyberdog_app_pb2.Pattern.GAIT_SLOW_TROT)
-                    elif v > 1:  # 上
-                        setGait(cyberdog_app_pb2.Pattern.GAIT_TROT)
-                elif c == 16:
-                    if v == 1:  # 右
-                        setGait(cyberdog_app_pb2.Pattern.GAIT_BOUND)
-                    elif v > 1:  # 左
-                        setGait(cyberdog_app_pb2.Pattern.GAIT_WALK)
             elif t == 3:
-                if c == 5:
-                    if v < 127:  # 前进
-                        GoForward(v)
-                    elif v > 129:  # 后退
-                        GoBack(v)
-                elif c == 2:
-                    if v < 127:
-                        TurnLeft(v)
-                    elif v > 129:
-                        TurnRight(v)
+                if c == 1:
+                    if v == 0:  # 前进
+                        GoForward()
+                    elif v == 2:  # 后退
+                        GoBack()
+                    else:
+                        Stop()
                 elif c == 0:
-                    if v < 127:
-                        GoLeft(v)
-                    elif v > 129:
-                        GoRight(v)
+                    if v == 0:
+                        TurnLeft()
+                    elif v == 2:
+                        TurnRight()
+                    else:
+                        Stop()
 
 
 def ros2():
-    print(subprocess.getoutput('whoami'))
     topic_name = ""
-    while topic_name.find('ip_notify') == -1:
+    while topic_name.find("ip_notify") == -1:
         topic_name = subprocess.getoutput("ros2 topic list | grep ip_notify")
         print(topic_name)
     ret = subprocess.getoutput(
@@ -259,9 +259,12 @@ def main():
     print("search joystick...")
     joystickEvent = None
     while joystickEvent == None:
-        joystickEvent = detectJoystick(["T-3"])
+        joystickEvent = detectJoystick(["R1"])
         time.sleep(1)
     print("find joystick and start loop")
+    sendThread = threading.Thread(target=SendData)
+    sendThread.daemon = 1
+    sendThread.start()
     joystickLoop(joystickEvent)
 
 
