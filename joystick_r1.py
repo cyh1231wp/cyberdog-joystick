@@ -25,7 +25,7 @@ MAX_SPEED = 16
 
 stub = None
 cyberdog_ip = "127.0.0.1"
-speed_lv = 0
+speed_lv = 1
 linear = Vector3(0, 0, 0)
 angular = Vector3(0, 0, 0)
 attitude = 0
@@ -127,8 +127,8 @@ def SendData():
                     )
                 )
             except:
-                print('err')
-        time.sleep(0.5)
+                print("err")
+        time.sleep(0.6)
 
 
 def GoForward():
@@ -175,8 +175,6 @@ def Stop():
 
 def SpeedUp():
     global speed_lv
-    if speed_lv == 0:
-        setGait()
     speed_lv += 1
     speed_lv = min(speed_lv, MAX_SPEED)
 
@@ -191,9 +189,12 @@ def changeAttitude():
     global attitude
     if attitude == 0:
         setMode(cyberdog_app_pb2.CheckoutMode_request.MANUAL)
+        setGait()
         attitude = 1
     elif attitude == 1:
         setMode(cyberdog_app_pb2.CheckoutMode_request.DEFAULT)
+        attitude = 0
+    else:
         attitude = 0
 
 

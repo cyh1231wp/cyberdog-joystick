@@ -1,5 +1,5 @@
 import struct
-import os,subprocess
+import os, subprocess
 from devices import detectJoystick
 import grpc
 import cyberdog_app_pb2
@@ -7,6 +7,7 @@ import cyberdog_app_pb2_grpc
 import threading
 import time
 import logging
+
 
 class Vector3:
     x: float = 0
@@ -107,64 +108,56 @@ def setGait(gait_id=8):
 
 
 def SendData():
-    global stub
-    stub.sendAppDecision(
-        cyberdog_app_pb2.Decissage(
-            twist=cyberdog_app_pb2.Twist(
-                linear=cyberdog_app_pb2.Vector3(x=linear.x, y=linear.y, z=linear.z),
-                angular=cyberdog_app_pb2.Vector3(x=angular.x, y=angular.y, z=angular.z),
-            )
-        )
-    )
+    global stub, linear, angular
+    print("start send thread")
+    while True:
+        if linear.x != 0 or linear.y != 0 or angular.z != 0:
+            try:
+                stub.sendAppDecision(
+                    cyberdog_app_pb2.Decissage(
+                        twist=cyberdog_app_pb2.Twist(
+                            linear=cyberdog_app_pb2.Vector3(
+                                x=linear.x, y=linear.y, z=linear.z
+                            ),
+                            angular=cyberdog_app_pb2.Vector3(
+                                x=angular.x, y=angular.y, z=angular.z
+                            ),
+                        )
+                    )
+                )
+            except:
+                print("err")
+        time.sleep(0.3)
 
 
 def GoForward(v):
     linear.x = 0.1 * speed_lv
-    linear.y = 0
-    angular.z = 0
-    SendData()
 
 
 def GoBack(v):
     linear.x = -0.1 * speed_lv
-    linear.y = 0
-    angular.z = 0
-    SendData()
 
 
 def GoLeft(v):
-    linear.x = 0
     linear.y = 0.1 * speed_lv
-    angular.z = 0
-    SendData()
 
 
 def GoRight(v):
-    linear.x = 0
     linear.y = -0.1 * speed_lv
-    angular.z = 0
-    SendData()
 
 
 def TurnLeft(v):
-    linear.x = 0
-    linear.y = 0
     angular.z = 0.1 * speed_lv
-    SendData()
 
 
 def TurnRight(v):
-    linear.x = 0
-    linear.y = 0
     angular.z = -0.1 * speed_lv
-    SendData()
 
 
 def Stop(v):
     linear.x = 0
     linear.y = 0
     angular.z = 0
-    SendData()
 
 
 def SpeedUp():
@@ -179,10 +172,23 @@ def SpeedDown():
     speed_lv = max(speed_lv, 1)
 
 
+def F_B(v):
+    v = 128 - v
+    linear.x = 0.1 * speed_lv * v / 128
+
+def L_R(v):
+    v = 128 - v
+    linear.y = 0.1 * speed_lv * v / 128
+
+def L_R_A(v):
+    v = 128 - v
+    angular.z = 0.1 * speed_lv * v / 128
+
+
 def joystickLoop(eventFile):
     FORMAT = "llHHI"
     EVENT_SIZE = struct.calcsize(FORMAT)
-    subprocess.getoutput('chmod 664 '+ eventFile)
+    subprocess.getoutput("chmod 664 " + eventFile)
     with open(eventFile, "rb") as infile:
         while True:
             event = infile.read(EVENT_SIZE)
@@ -222,26 +228,16 @@ def joystickLoop(eventFile):
                         setGait(cyberdog_app_pb2.Pattern.GAIT_WALK)
             elif t == 3:
                 if c == 5:
-                    if v < 127:  # 前进
-                        GoForward(v)
-                    elif v > 129:  # 后退
-                        GoBack(v)
+                    F_B(v)
                 elif c == 2:
-                    if v < 127:
-                        TurnLeft(v)
-                    elif v > 129:
-                        TurnRight(v)
+                    L_R_A(v)
                 elif c == 0:
-                    if v < 127:
-                        GoLeft(v)
-                    elif v > 129:
-                        GoRight(v)
+                    L_R(v)
 
 
 def ros2():
-    print(subprocess.getoutput('whoami'))
     topic_name = ""
-    while topic_name.find('ip_notify') == -1:
+    while topic_name.find("ip_notify") == -1:
         topic_name = subprocess.getoutput("ros2 topic list | grep ip_notify")
         print(topic_name)
     ret = subprocess.getoutput(
@@ -262,6 +258,9 @@ def main():
         joystickEvent = detectJoystick(["T-3"])
         time.sleep(1)
     print("find joystick and start loop")
+    sendThread = threading.Thread(target=SendData)
+    sendThread.daemon = 1
+    sendThread.start()
     joystickLoop(joystickEvent)
 
 
